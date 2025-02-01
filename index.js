@@ -46,7 +46,7 @@ const programLocations = {
 	transform: context.getUniformLocation(shaderProgram, "transform"),
 };
 
-const vertices = [1, 1, 0, 1, 1, 0, 0, 0];
+const vertices = [1, 1, -1, 1, 1, -1, -1, -1];
 const vertexBuffer = context.createBuffer();
 context.bindBuffer(context.ARRAY_BUFFER, vertexBuffer);
 context.bufferData(context.ARRAY_BUFFER, new Float32Array(vertices), context.STATIC_DRAW);
@@ -56,18 +56,21 @@ let time = performance.now();
 const frame = now => {
 	const dt = now - time;
 	time = now;
-	update(dt);
+	update(dt / 1000);
 	render();
 	window.requestAnimationFrame(frame);
 };
 window.requestAnimationFrame(frame);
 
 const camera = {
-	pos: [1, 0, 5],
+	pos: [0, 0, 5],
+	pitch: 0,
+	yaw: 0,
 };
 
 const update = (dt) => {
 	camera.pos[0] = 2 * Math.sin(0.001 * (time - load));
+	camera.pos[1] = 2 * Math.sin(0.001 * (time - load) + Math.PI / 2);
 };
 
 const render = () => {
@@ -76,13 +79,12 @@ const render = () => {
 	canvas.height = h;
 	context.viewport(0, 0, w, h);
 
-	context.uniformMatrix4fv(programLocations.transform, false, Matrix.mul(
+	context.uniformMatrix4fv(programLocations.transform, false, Matrix.compose([
+		Matrix.translation(Vector.neg(camera.pos)),
+		Matrix.rotation_y(-camera.yaw),
+		Matrix.rotation_x(-camera.pitch),
 		Matrix.perspective(w / h),
-		Matrix.mul(
-			Matrix.translation(Vector.neg(camera.pos)),
-			Matrix.identity(),
-		),
-	));
+	]));
 
 	context.bindBuffer(context.ARRAY_BUFFER, vertexBuffer);
 	context.vertexAttribPointer(programLocations.vertex, 2, context.FLOAT, false, 0, 0);

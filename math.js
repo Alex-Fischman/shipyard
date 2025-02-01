@@ -20,6 +20,7 @@ const Matrix = {
 		return out;
 	},
 
+	compose: xs => xs.reduceRight(Matrix.mul),
 	identity: () => [
 		1, 0, 0, 0,
 		0, 1, 0, 0,
@@ -31,6 +32,24 @@ const Matrix = {
 		0, 1, 0, 0,
 		0, 0, 1, 0,
 		x, y, z, 1,
+	],
+	rotation_x: theta => [
+		1, 0, 0, 0,
+		0, Math.cos(theta), Math.sin(theta), 0,
+		0, -Math.sin(theta), Math.cos(theta), 0,
+		0, 0, 0, 1,
+	],
+	rotation_y: theta => [
+		Math.cos(theta), 0, -Math.sin(theta), 0,
+		0, 1, 0, 0,
+		Math.sin(theta), 0, Math.cos(theta), 0,
+		0, 0, 0, 1,
+	],
+	rotation_z: theta => [
+		Math.cos(theta), Math.sin(theta), 0, 0,
+		-Math.sin(theta), Math.cos(theta), 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1,
 	],
 	perspective: aspect => [
 		1 / Math.tan(FOV / 2) / aspect, 0, 0, 0,
