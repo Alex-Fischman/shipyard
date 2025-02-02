@@ -2,81 +2,6 @@ const FOV = Math.PI / 2;
 const NEAR = 0.001;
 const FAR = 1000;
 
-const drawContainers = (models, view, projection) => {
-	const vertexShader = `
-		attribute vec4 vertex;
-		attribute vec4 vertexColor;
-		attribute mat4 model;
-
-		uniform mat4 view;
-		uniform mat4 projection;
-
-		varying lowp vec4 fragmentColor;
-
-		void main() {
-			gl_Position = projection * view * model * vertex;
-			fragmentColor = vertexColor;
-		}
-	`;
-	const fragmentShader = `
-		varying lowp vec4 fragmentColor;
-		void main() {
-			gl_FragColor = fragmentColor;
-		}
-	`;
-	const {attributes, uniforms} = WebGL.program(
-		vertexShader,
-		fragmentShader,
-		["vertex", "vertexColor", "model"],
-		["view", "projection"]
-	);
-
-	WebGL.attribute_vec3({
-		location: attributes.vertex,
-		data: [
-			-1, -1,  1,  1, -1,  1,  1,  1,  1, -1,  1,  1,
-			-1, -1, -1, -1,  1, -1,  1,  1, -1,  1, -1, -1,
-			-1,  1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1,
-			-1, -1, -1,  1, -1, -1,  1, -1,  1, -1, -1,  1,
-			 1, -1, -1,  1,  1, -1,  1,  1,  1,  1, -1,  1,
-			-1, -1, -1, -1, -1,  1, -1,  1,  1, -1,  1, -1,
-		],
-	});
-
-	WebGL.attribute_vec3({
-		location: attributes.vertexColor,
-		divisor: 1,
-		data: [
-			1, 0, 0,
-			0, 1, 0,
-			0, 0, 1,
-			1, 1, 0,
-			0, 1, 1,
-		],
-	});
-
-	WebGL.attribute_mat4({
-		location: attributes.model,
-		divisor: 1,
-		data: models.flat(),
-	});
-
-	WebGL.uniform_mat4({ location: uniforms.view,       data: view });
-	WebGL.uniform_mat4({ location: uniforms.projection, data: projection });
-
-	WebGL.draw_elements({
-		indices: [
-			 0,  1,  2,  0,  2,  3,
-			 4,  5,  6,  4,  6,  7,
-			 8,  9, 10,  8, 10, 11,
-			12, 13, 14, 12, 14, 15,
-			16, 17, 18, 16, 18, 19,
-			20, 21, 22, 20, 22, 23,
-		],
-		models,
-	})
-};
-
 const load = performance.now();
 let time = performance.now();
 const frame = now => {
@@ -118,5 +43,48 @@ const render = () => {
 
 	const projection = Matrix.perspective(width / height);
 
-	drawContainers(models, view, projection);
+	const vertices = [
+		-1, -1,  1,  1, -1,  1,  1,  1,  1, -1,  1,  1,
+		-1, -1, -1, -1,  1, -1,  1,  1, -1,  1, -1, -1,
+		-1,  1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1,
+		-1, -1, -1,  1, -1, -1,  1, -1,  1, -1, -1,  1,
+		 1, -1, -1,  1,  1, -1,  1,  1,  1,  1, -1,  1,
+		-1, -1, -1, -1, -1,  1, -1,  1,  1, -1,  1, -1,
+	];
+
+	const vertexColors = [1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1];
+
+	WebGL.bindShader({
+		vertex: `
+			gl_Position = projection * view * model * vec4(vertex, 1);
+			fragmentColor = vec4(vertexColor, 1);
+		`,
+		fragment: `
+			gl_FragColor = fragmentColor;
+		`,
+		attributes: {
+			vertex:      { type: "vec3", data: vertices },
+			vertexColor: { type: "vec3", data: vertexColors, divisor: 1 },
+			model:       { type: "mat4", data: models.flat(), divisor: 1 },
+		},
+		uniforms: {
+			view:       { type: "mat4", data: view },
+			projection: { type: "mat4", data: projection },
+		},
+		varyings: {
+			fragmentColor: { type: "lowp vec4" },
+		},
+	});
+
+	WebGL.drawElements({
+		instances: models.length,
+		indices: [
+			 0,  1,  2,  0,  2,  3,
+			 4,  5,  6,  4,  6,  7,
+			 8,  9, 10,  8, 10, 11,
+			12, 13, 14, 12, 14, 15,
+			16, 17, 18, 16, 18, 19,
+			20, 21, 22, 20, 22, 23,
+		],
+	});
 };

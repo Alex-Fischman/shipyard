@@ -16,57 +16,91 @@ const WebGL = {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		return { width, height };
 	},
-	shader: (source, type) => {
-		const shader = gl.createShader(type);
-		gl.shaderSource(shader, source);
-		gl.compileShader(shader);
-		if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+
+	bindShader: ({ vertex, fragment, attributes, uniforms, varyings }) => {
+		const vertexSource = `
+${Object.entries(attributes).map(
+	([name, {type}]) => `attribute ${type} ${name};`
+).join('\n')}
+
+${Object.entries(uniforms).map(
+	([name, {type}]) => `uniform ${type} ${name};`
+).join('\n')}
+
+${Object.entries(varyings).map(
+	([name, {type}]) => `varying ${type} ${name};`
+).join('\n')}
+
+void main() {
+	${vertex}
+}
+		`;
+		const fragmentSource = `
+${Object.entries(varyings).map(
+	([name, {type}]) => `varying ${type} ${name};`
+).join('\n')}
+
+void main() {
+	${fragment}
+}
+		`;
+
+		const compile = (source, type) => {
+			const shader = gl.createShader(type);
+			gl.shaderSource(shader, source);
+			gl.compileShader(shader);
+			if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw `
+				Shader compile error:
+				${gl.getShaderInfoLog(shader)}
+				${source}
+			`;
 			return shader;
-		} else {
-			throw "Shader compile error:\n" + gl.getShaderInfoLog(shader);
-		}
-	},
-	program: (vertex, fragment, attributes, uniforms) => {
+		};
+
 		const program = gl.createProgram();
-		gl.attachShader(program, WebGL.shader(vertex, gl.VERTEX_SHADER));
-		gl.attachShader(program, WebGL.shader(fragment, gl.FRAGMENT_SHADER));
+		gl.attachShader(program, compile(vertexSource, gl.VERTEX_SHADER));
+		gl.attachShader(program, compile(fragmentSource, gl.FRAGMENT_SHADER));
 		gl.linkProgram(program);
-		if (gl.getProgramParameter(program, gl.LINK_STATUS)) {
-			gl.useProgram(program);
-			return {
-				attributes: Object.fromEntries(
-					attributes.map(x => [x, gl.getAttribLocation(program, x)])
-				),
-				uniforms: Object.fromEntries(
-					uniforms.map(x => [x, gl.getUniformLocation(program, x)])
-				),
-			};
-		} else {
+
+		if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 			throw "Shader link error:\n" + gl.getProgramInfoLog(program);
 		}
-	},
-	attribute_vec3: ({location, data, divisor}) => {
-		gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
-		gl.vertexAttribPointer(location, 3, gl.FLOAT, false, 0, 0);
-		gl.enableVertexAttribArray(location);
-		if (divisor) gl.vertexAttribDivisor(location, divisor);
-	},
-	attribute_mat4: ({location, data, divisor}) => {
-		gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
-		for (let i = 0; i < 4; i++) {
-			gl.vertexAttribPointer(location + i, 4, gl.FLOAT, false, 64, 16 * i);
-			gl.enableVertexAttribArray(location + i);
-			if (divisor) gl.vertexAttribDivisor(location + i, divisor);
+
+		gl.useProgram(program);
+
+		for (const [name, {type, data, divisor}] of Object.entries(attributes)) {
+			gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+
+			const bindAttribute = (location, size, stride, offset) => {
+				gl.vertexAttribPointer(location, size, gl.FLOAT, false, stride, offset);
+				gl.enableVertexAttribArray(location);
+				if (divisor) gl.vertexAttribDivisor(location, divisor);
+			};
+
+			const location = gl.getAttribLocation(program, name);
+			if (type == "vec3") {
+				bindAttribute(location, 3, 0, 0);
+			} else if (type == "mat4") {
+				for (let i = 0; i < 4; i++) bindAttribute(location + i, 4, 64, 16 * i);
+			} else {
+				throw `Unknown attribute type ${type} for ${name}`;
+			}
+		}
+
+		for (const [name, {type, data}] of Object.entries(uniforms)) {
+			const location = gl.getUniformLocation(program, name);
+			if (type == "mat4") {
+				gl.uniformMatrix4fv(location, false, data);
+			} else {
+				throw `Unknown uniform type ${type} for ${name}`;
+			}
 		}
 	},
-	uniform_mat4: ({location, data}) => {
-		gl.uniformMatrix4fv(location, false, data);
-	},
-	draw_elements: ({indices, models}) => {
+
+	drawElements: ({ indices, instances }) => {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
 		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-		gl.drawElementsInstanced(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0, models.length);
+		gl.drawElementsInstanced(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0, instances);
 	},
 };
