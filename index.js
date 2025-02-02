@@ -3,13 +3,13 @@ const NEAR = 0.001;
 const FAR = 1000;
 
 const canvas = document.getElementById("canvas");
-const context = canvas.getContext("webgl2");
-if (context == null) {
+const gl = canvas.getContext("webgl2");
+if (gl == null) {
 	throw "WebGL2 is unsupported";
 }
 
-const vertexShader = context.createShader(context.VERTEX_SHADER);
-context.shaderSource(vertexShader, `
+const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+gl.shaderSource(vertexShader, `
 	attribute vec4 vertex;
 	attribute vec4 vertexColor;
 	uniform mat4 transform;
@@ -19,36 +19,36 @@ context.shaderSource(vertexShader, `
 		fragmentColor = vertexColor;
 	}
 `);
-context.compileShader(vertexShader);
-if (!context.getShaderParameter(vertexShader, context.COMPILE_STATUS)) {
-	throw "Shader compile error:\n" + context.getShaderInfoLog(vertexShader);
+gl.compileShader(vertexShader);
+if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+	throw "Shader compile error:\n" + gl.getShaderInfoLog(vertexShader);
 }
 
-const fragmentShader = context.createShader(context.FRAGMENT_SHADER);
-context.shaderSource(fragmentShader, `
+const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+gl.shaderSource(fragmentShader, `
 	varying lowp vec4 fragmentColor;
 	void main() {
 		gl_FragColor = fragmentColor;
 	}
 `);
-context.compileShader(fragmentShader);
-if (!context.getShaderParameter(fragmentShader, context.COMPILE_STATUS)) {
-	throw "Shader compile error:\n" + context.getShaderInfoLog(fragmentShader);
+gl.compileShader(fragmentShader);
+if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+	throw "Shader compile error:\n" + gl.getShaderInfoLog(fragmentShader);
 }
 
-const shaderProgram = context.createProgram();
-context.attachShader(shaderProgram, vertexShader);
-context.attachShader(shaderProgram, fragmentShader);
-context.linkProgram(shaderProgram);
-if (!context.getProgramParameter(shaderProgram, context.LINK_STATUS)) {
+const shaderProgram = gl.createProgram();
+gl.attachShader(shaderProgram, vertexShader);
+gl.attachShader(shaderProgram, fragmentShader);
+gl.linkProgram(shaderProgram);
+if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
 	throw "Shader link error:\n" + gl.getProgramInfoLog(shaderProgram);
 }
 
-context.useProgram(shaderProgram);
+gl.useProgram(shaderProgram);
 const programLocations = {
-	vertex: context.getAttribLocation(shaderProgram, "vertex"),
-	vertexColor: context.getAttribLocation(shaderProgram, "vertexColor"),
-	transform: context.getUniformLocation(shaderProgram, "transform"),
+	vertex: gl.getAttribLocation(shaderProgram, "vertex"),
+	vertexColor: gl.getAttribLocation(shaderProgram, "vertexColor"),
+	transform: gl.getUniformLocation(shaderProgram, "transform"),
 };
 
 const vertices = [
@@ -59,11 +59,11 @@ const vertices = [
 	 1, -1, -1,  1,  1, -1,  1,  1,  1,  1, -1,  1,
 	-1, -1, -1, -1, -1,  1, -1,  1,  1, -1,  1, -1,
 ];
-const vertexBuffer = context.createBuffer();
-context.bindBuffer(context.ARRAY_BUFFER, vertexBuffer);
-context.bufferData(context.ARRAY_BUFFER, new Float32Array(vertices), context.STATIC_DRAW);
-context.vertexAttribPointer(programLocations.vertex, 3, context.FLOAT, false, 0, 0);
-context.enableVertexAttribArray(programLocations.vertex);
+const vertexBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+gl.vertexAttribPointer(programLocations.vertex, 3, gl.FLOAT, false, 0, 0);
+gl.enableVertexAttribArray(programLocations.vertex);
 
 const indices = [
 	 0,  1,  2,  0,  2,  3,
@@ -73,16 +73,16 @@ const indices = [
 	16, 17, 18, 16, 18, 19,
 	20, 21, 22, 20, 22, 23,
 ];
-const indexBuffer = context.createBuffer();
-context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, indexBuffer);
-context.bufferData(context.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), context.STATIC_DRAW);
+const indexBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
 
 const vertexColors = vertices.map(x => Math.max(0, x));
-const vertexColorBuffer = context.createBuffer();
-context.bindBuffer(context.ARRAY_BUFFER, vertexColorBuffer);
-context.bufferData(context.ARRAY_BUFFER, new Float32Array(vertexColors), context.STATIC_DRAW);
-context.vertexAttribPointer(programLocations.vertexColor, 3, context.FLOAT, false, 0, 0);
-context.enableVertexAttribArray(programLocations.vertexColor);
+const vertexColorBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexColors), gl.STATIC_DRAW);
+gl.vertexAttribPointer(programLocations.vertexColor, 3, gl.FLOAT, false, 0, 0);
+gl.enableVertexAttribArray(programLocations.vertexColor);
 
 const load = performance.now();
 let time = performance.now();
@@ -110,19 +110,19 @@ const render = () => {
 	const {width: w, height: h} = canvas.getBoundingClientRect();
 	canvas.width = w;
 	canvas.height = h;
-	context.viewport(0, 0, w, h);
+	gl.viewport(0, 0, w, h);
 
-	context.uniformMatrix4fv(programLocations.transform, false, Matrix.compose([
+	gl.uniformMatrix4fv(programLocations.transform, false, Matrix.compose([
 		Matrix.translation(Vector.neg(camera.pos)),
 		Matrix.rotation_y(-camera.yaw),
 		Matrix.rotation_x(-camera.pitch),
 		Matrix.perspective(w / h),
 	]));
 
-	context.clearColor(0, 0, 0, 1);
-	context.enable(context.DEPTH_TEST);
-	context.clear(context.COLOR_BUFFER_BIT | context.DEPTH_BUFFER_BIT);
+	gl.clearColor(0, 0, 0, 1);
+	gl.enable(gl.DEPTH_TEST);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-	context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, indexBuffer);
-	context.drawElements(context.TRIANGLES, indices.length, context.UNSIGNED_SHORT, 0);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+	gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 };
