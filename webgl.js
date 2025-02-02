@@ -17,7 +17,7 @@ const WebGL = {
 		return { width, height };
 	},
 
-	bindShader: ({ vertex, fragment, attributes, uniforms, varyings }) => {
+	draw: ({ vertex, fragment, attributes, uniforms, varyings, instances, indices }) => {
 		const vertexSource = `
 ${Object.entries(attributes).map(
 	([name, {type}]) => `attribute ${type} ${name};`
@@ -96,9 +96,7 @@ void main() {
 				throw `Unknown uniform type ${type} for ${name}`;
 			}
 		}
-	},
 
-	drawElements: ({ indices, instances }) => {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
 		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
 		gl.drawElementsInstanced(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0, instances);

@@ -54,7 +54,7 @@ const render = () => {
 
 	const vertexColors = [1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1];
 
-	WebGL.bindShader({
+	WebGL.draw({
 		vertex: `
 			gl_Position = projection * view * model * vec4(vertex, 1);
 			fragmentColor = vec4(vertexColor, 1);
@@ -74,9 +74,6 @@ const render = () => {
 		varyings: {
 			fragmentColor: { type: "lowp vec4" },
 		},
-	});
-
-	WebGL.drawElements({
 		instances: models.length,
 		indices: [
 			 0,  1,  2,  0,  2,  3,
