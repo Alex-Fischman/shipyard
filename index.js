@@ -12,10 +12,15 @@ const vertexShader = gl.createShader(gl.VERTEX_SHADER);
 gl.shaderSource(vertexShader, `
 	attribute vec4 vertex;
 	attribute vec4 vertexColor;
-	uniform mat4 transform;
+	attribute mat4 model;
+
+	uniform mat4 view;
+	uniform mat4 projection;
+
 	varying lowp vec4 fragmentColor;
+
 	void main() {
-		gl_Position = transform * vertex;
+		gl_Position = projection * view * model * vertex;
 		fragmentColor = vertexColor;
 	}
 `);
@@ -45,10 +50,14 @@ if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
 }
 
 gl.useProgram(shaderProgram);
-const programLocations = {
+const attributes = {
 	vertex: gl.getAttribLocation(shaderProgram, "vertex"),
 	vertexColor: gl.getAttribLocation(shaderProgram, "vertexColor"),
-	transform: gl.getUniformLocation(shaderProgram, "transform"),
+	model: gl.getAttribLocation(shaderProgram, "model"),
+};
+const uniforms = {
+	view: gl.getUniformLocation(shaderProgram, "view"),
+	projection: gl.getUniformLocation(shaderProgram, "projection"),
 };
 
 const vertices = [
@@ -62,8 +71,8 @@ const vertices = [
 const vertexBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-gl.vertexAttribPointer(programLocations.vertex, 3, gl.FLOAT, false, 0, 0);
-gl.enableVertexAttribArray(programLocations.vertex);
+gl.vertexAttribPointer(attributes.vertex, 3, gl.FLOAT, false, 0, 0);
+gl.enableVertexAttribArray(attributes.vertex);
 
 const indices = [
 	 0,  1,  2,  0,  2,  3,
@@ -77,12 +86,36 @@ const indexBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
 
-const vertexColors = vertices.map(x => Math.max(0, x));
+const vertexColors = [
+	1, 0, 0,
+	0, 1, 0,
+	0, 0, 1,
+	1, 1, 0,
+	0, 1, 1,
+];
 const vertexColorBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexColors), gl.STATIC_DRAW);
-gl.vertexAttribPointer(programLocations.vertexColor, 3, gl.FLOAT, false, 0, 0);
-gl.enableVertexAttribArray(programLocations.vertexColor);
+gl.vertexAttribPointer(attributes.vertexColor, 3, gl.FLOAT, false, 0, 0);
+gl.enableVertexAttribArray(attributes.vertexColor);
+gl.vertexAttribDivisor(attributes.vertexColor, 1);
+
+const models = [
+	Matrix.translation([ 0,  0, 0]),
+	Matrix.translation([ 2,  0, 0]),
+	Matrix.translation([-2,  0, 0]),
+	Matrix.translation([ 0,  2, 0]),
+	Matrix.translation([ 0, -2, 0]),
+].flat();
+const modelBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, modelBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(models), gl.STATIC_DRAW);
+for (let i = 0; i < 4; i++) {
+	const location = attributes.model + i;
+	gl.vertexAttribPointer(location, 4, gl.FLOAT, false, 64, 16 * i);
+	gl.enableVertexAttribArray(location);
+	gl.vertexAttribDivisor(location, 1);
+}
 
 const load = performance.now();
 let time = performance.now();
@@ -112,17 +145,17 @@ const render = () => {
 	canvas.height = h;
 	gl.viewport(0, 0, w, h);
 
-	gl.uniformMatrix4fv(programLocations.transform, false, Matrix.compose([
+	gl.uniformMatrix4fv(uniforms.view, false, Matrix.compose([
 		Matrix.translation(Vector.neg(camera.pos)),
 		Matrix.rotation_y(-camera.yaw),
 		Matrix.rotation_x(-camera.pitch),
-		Matrix.perspective(w / h),
 	]));
+
+	gl.uniformMatrix4fv(uniforms.projection, false, Matrix.perspective(w / h));
 
 	gl.clearColor(0, 0, 0, 1);
 	gl.enable(gl.DEPTH_TEST);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-	gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+	gl.drawElementsInstanced(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0, models.length);
 };
