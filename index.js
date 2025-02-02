@@ -61,21 +61,20 @@ const drawContainers = (models, view, projection) => {
 		data: models.flat(),
 	});
 
-	gl.uniformMatrix4fv(uniforms.view, false, view);
-	gl.uniformMatrix4fv(uniforms.projection, false, projection);
+	WebGL.uniform_mat4({ location: uniforms.view,       data: view });
+	WebGL.uniform_mat4({ location: uniforms.projection, data: projection });
 
-	const indices = [
-		 0,  1,  2,  0,  2,  3,
-		 4,  5,  6,  4,  6,  7,
-		 8,  9, 10,  8, 10, 11,
-		12, 13, 14, 12, 14, 15,
-		16, 17, 18, 16, 18, 19,
-		20, 21, 22, 20, 22, 23,
-	];
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-
-	gl.drawElementsInstanced(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0, models.length);
+	WebGL.draw_elements({
+		indices: [
+			 0,  1,  2,  0,  2,  3,
+			 4,  5,  6,  4,  6,  7,
+			 8,  9, 10,  8, 10, 11,
+			12, 13, 14, 12, 14, 15,
+			16, 17, 18, 16, 18, 19,
+			20, 21, 22, 20, 22, 23,
+		],
+		models,
+	})
 };
 
 const load = performance.now();
@@ -101,11 +100,7 @@ const update = (dt) => {
 };
 
 const render = () => {
-	const {width: w, height: h} = canvas.getBoundingClientRect();
-	canvas.width = w;
-	canvas.height = h;
-	gl.viewport(0, 0, w, h);
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	const { width, height } = WebGL.clear();
 
 	const models = [
 		Matrix.translation([ 0,  0, 0]),
@@ -121,7 +116,7 @@ const render = () => {
 		Matrix.rotation_x(-camera.pitch),
 	]);
 
-	const projection = Matrix.perspective(w / h);
+	const projection = Matrix.perspective(width / height);
 
 	drawContainers(models, view, projection);
 };

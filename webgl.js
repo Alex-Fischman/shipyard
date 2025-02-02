@@ -8,6 +8,14 @@ gl.clearColor(1, 0, 1, 1);
 gl.enable(gl.DEPTH_TEST);
 
 const WebGL = {
+	clear: () => {
+		const { width, height } = canvas.getBoundingClientRect();
+		canvas.width = width;
+		canvas.height = height;
+		gl.viewport(0, 0, width, height);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		return { width, height };
+	},
 	shader: (source, type) => {
 		const shader = gl.createShader(type);
 		gl.shaderSource(shader, source);
@@ -52,5 +60,13 @@ const WebGL = {
 			gl.enableVertexAttribArray(location + i);
 			if (divisor) gl.vertexAttribDivisor(location + i, divisor);
 		}
+	},
+	uniform_mat4: ({location, data}) => {
+		gl.uniformMatrix4fv(location, false, data);
+	},
+	draw_elements: ({indices, models}) => {
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+		gl.drawElementsInstanced(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0, models.length);
 	},
 };
