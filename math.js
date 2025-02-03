@@ -2,7 +2,10 @@ const Vector = {
 	add: (x, y) => x.map((_, i) => x[i] + y[i]),
 	sub: (x, y) => x.map((_, i) => x[i] - y[i]),
 	mul: (x, y) => x.map((_, i) => x[i] * y[i]),
-	neg: x => x.map(x => -x),
+	dot: (x, y) => Vector.mul(x, y).reduce((a, b) => a + b),
+	scale: (s, x) => x.map(x => x * s),
+	magnitude: x => Math.sqrt(Vector.dot(x, x)),
+	normalize: x => Vector.scale(1 / Vector.magnitude(x), x),
 };
 
 const Matrix = {
