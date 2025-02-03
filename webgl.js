@@ -36,6 +36,12 @@ void main() {
 }
 		`;
 		const fragmentSource = `
+precision lowp float;
+
+${Object.entries(uniforms).map(
+	([name, {type}]) => `uniform ${type} ${name};`
+).join('\n')}
+
 ${Object.entries(varyings).map(
 	([name, {type}]) => `varying ${type} ${name};`
 ).join('\n')}
@@ -90,7 +96,9 @@ void main() {
 
 		for (const [name, {type, data}] of Object.entries(uniforms)) {
 			const location = gl.getUniformLocation(program, name);
-			if (type == "mat4") {
+			if (type == "vec3") {
+				gl.uniform3fv(location, data);
+			} else if (type == "mat4") {
 				gl.uniformMatrix4fv(location, false, data);
 			} else {
 				throw `Unknown uniform type ${type} for ${name}`;
