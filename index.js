@@ -31,6 +31,35 @@ const update = (dt) => {
 	camera.yaw = 0.001 * (time - load);
 };
 
+const boxMesh = () => {
+	const vertices = [];
+	const normals = [];
+	const indices = [];
+
+	const face = (corners, normal) => {
+		const start = vertices.length / 3;
+		vertices.push(...corners.flat());
+		normals.push(...Array(corners.length).fill(normal).flat());
+		for (let i = 1; i + 1 < corners.length; i++) {
+			indices.push(start, start + i, start + i + 1);
+		}
+	};
+
+	let cube = [
+		[-1, -1, -1], [-1, -1,  1], [-1,  1, -1], [-1,  1,  1],
+		[ 1, -1, -1], [ 1, -1,  1], [ 1,  1, -1], [ 1,  1,  1],
+	];
+
+	face([cube[1], cube[5], cube[7], cube[3]], [ 0,  0,  1]);
+	face([cube[0], cube[2], cube[6], cube[4]], [ 0,  0, -1]);
+	face([cube[2], cube[3], cube[7], cube[6]], [ 0,  1,  0]);
+	face([cube[0], cube[4], cube[5], cube[1]], [ 0, -1,  0]);
+	face([cube[4], cube[6], cube[7], cube[5]], [ 1,  0,  0]);
+	face([cube[0], cube[1], cube[3], cube[2]], [-1,  0,  0]);
+
+	return { vertices, normals, indices };
+};
+
 const render = () => {
 	const { width, height } = WebGL.clear();
 
@@ -48,27 +77,11 @@ const render = () => {
 
 	const projection = Matrix.perspective(width / height);
 
-	const vertices = [
-		-1, -1,  1,  1, -1,  1,  1,  1,  1, -1,  1,  1,
-		-1, -1, -1, -1,  1, -1,  1,  1, -1,  1, -1, -1,
-		-1,  1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1,
-		-1, -1, -1,  1, -1, -1,  1, -1,  1, -1, -1,  1,
-		 1, -1, -1,  1,  1, -1,  1,  1,  1,  1, -1,  1,
-		-1, -1, -1, -1, -1,  1, -1,  1,  1, -1,  1, -1,
-	];
-
-	const normals = [
-		 0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,
-		 0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,
-		 0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,
-		 0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,
-		 1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,
-		-1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0,
-	];
+	const { vertices, normals, indices } = boxMesh();
 
 	const vertexColors = [1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1];
 
-	const lightDirection = Vector.normalize([1, 1, 1]);
+	const lightDirection = Vector.normalize([1, 0.5, 0.25]);
 
 	WebGL.draw({
 		vertex: `
@@ -97,13 +110,6 @@ const render = () => {
 			fragmentNormal: { type: "vec3" },
 		},
 		instances: boxes.length,
-		indices: [
-			 0,  1,  2,  0,  2,  3,
-			 4,  5,  6,  4,  6,  7,
-			 8,  9, 10,  8, 10, 11,
-			12, 13, 14, 12, 14, 15,
-			16, 17, 18, 16, 18, 19,
-			20, 21, 22, 20, 22, 23,
-		],
+		indices,
 	});
 };

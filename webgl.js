@@ -56,9 +56,9 @@ void main() {
 			gl.shaderSource(shader, source);
 			gl.compileShader(shader);
 			if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw `
-				Shader compile error:
-				${gl.getShaderInfoLog(shader)}
-				${source}
+Shader compile error:
+${gl.getShaderInfoLog(shader)}
+${source}
 			`;
 			return shader;
 		};
