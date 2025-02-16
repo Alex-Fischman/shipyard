@@ -27,22 +27,22 @@ const boxes = [
 	Matrix.translation([ 0, -2, 0]),
 ];
 
-const update = (dt) => {
-	camera.yaw = 0.001 * (time - load);
+const update = dt => {
+	Input.update();
+
+	const speed = 1;
+	if (Input.held["KeyD"]) camera.pos[0] += dt * speed;
+	if (Input.held["KeyA"]) camera.pos[0] -= dt * speed;
+	if (Input.held["KeyW"]) camera.pos[1] += dt * speed;
+	if (Input.held["KeyS"]) camera.pos[1] -= dt * speed;
 };
 
 const render = () => {
 	const { width, height } = WebGL.clear();
 
 	const view = Matrix.compose([
-		// // fps camera
-		// Matrix.translation(Vector.scale(-1, camera.pos)),
-		// Matrix.rotation_y(-camera.yaw),
-		// Matrix.rotation_x(-camera.pitch),
-
-		// spin around model
-		Matrix.rotation_y(-camera.yaw),
 		Matrix.translation(Vector.scale(-1, camera.pos)),
+		Matrix.rotation_y(-camera.yaw),
 		Matrix.rotation_x(-camera.pitch),
 	]);
 
