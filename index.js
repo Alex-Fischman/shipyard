@@ -14,30 +14,35 @@ const frame = now => {
 window.requestAnimationFrame(frame);
 
 const camera = {
-	pos: [0, 0, 10],
-	pitch: 0,
+	pos: [0, 1.5, 10],
+	pitch: -0.1,
 	yaw: 0,
 };
 
+const boxes = [
+	Matrix.translation([ 0,  0, 0]),
+	Matrix.translation([ 2,  0, 0]),
+	Matrix.translation([-2,  0, 0]),
+	Matrix.translation([ 0,  2, 0]),
+	Matrix.translation([ 0, -2, 0]),
+];
+
 const update = (dt) => {
-	camera.pos[0] = 2 * Math.sin(0.001 * (time - load));
-	camera.pos[1] = 2 * Math.sin(0.001 * (time - load) + Math.PI / 2);
+	camera.yaw = 0.001 * (time - load);
 };
 
 const render = () => {
 	const { width, height } = WebGL.clear();
 
-	const models = [
-		Matrix.translation([ 0,  0, 0]),
-		Matrix.translation([ 3,  0, 0]),
-		Matrix.translation([-3,  0, 0]),
-		Matrix.translation([ 0,  3, 0]),
-		Matrix.translation([ 0, -3, 0]),
-	].map(model => Matrix.mul(model, Matrix.rotation_z(0.001 * (time - load))));
-
 	const view = Matrix.compose([
-		Matrix.translation(Vector.scale(-1, camera.pos)),
+		// // fps camera
+		// Matrix.translation(Vector.scale(-1, camera.pos)),
+		// Matrix.rotation_y(-camera.yaw),
+		// Matrix.rotation_x(-camera.pitch),
+
+		// spin around model
 		Matrix.rotation_y(-camera.yaw),
+		Matrix.translation(Vector.scale(-1, camera.pos)),
 		Matrix.rotation_x(-camera.pitch),
 	]);
 
@@ -80,7 +85,7 @@ const render = () => {
 			vertex:       { type: "vec3", data: vertices },
 			vertexColor:  { type: "vec3", data: vertexColors, divisor: 1 },
 			vertexNormal: { type: "vec3", data: normals },
-			model:        { type: "mat4", data: models.flat(), divisor: 1 },
+			model:        { type: "mat4", data: boxes.flat(), divisor: 1 },
 		},
 		uniforms: {
 			view:           { type: "mat4", data: view },
@@ -91,7 +96,7 @@ const render = () => {
 			fragmentColor:  { type: "vec3" },
 			fragmentNormal: { type: "vec3" },
 		},
-		instances: models.length,
+		instances: boxes.length,
 		indices: [
 			 0,  1,  2,  0,  2,  3,
 			 4,  5,  6,  4,  6,  7,
