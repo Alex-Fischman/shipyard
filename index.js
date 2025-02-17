@@ -43,6 +43,13 @@ const camera = {
 	},
 };
 
+document.addEventListener("mousemove", event => {
+	if (!document.pointerLockElement) return;
+	camera.yaw -= event.movementX * 0.002;
+	camera.pitch -= event.movementY * 0.002;
+	camera.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.pitch));
+});
+
 const boxes = [
 	Matrix.translation([ 0,  0, 0]),
 	Matrix.translation([ 2,  0, 0]),
@@ -71,13 +78,6 @@ const update = dt => {
 		Vector.scale(MOVE_SPEED * move[2] * dt, [vm[2], vm[6], vm[10]]),
 	].reduce(Vector.add);
 };
-
-document.addEventListener("mousemove", event => {
-	if (!document.pointerLockElement) return;
-	camera.yaw -= event.movementX * 0.002;
-	camera.pitch -= event.movementY * 0.002;
-	camera.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.pitch));
-});
 
 const render = () => {
 	const { width, height } = WebGL.clear();
