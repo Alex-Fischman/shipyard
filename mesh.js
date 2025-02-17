@@ -45,6 +45,7 @@ const Mesh = {
 
 			p[1] = Vector.sub(p[1], out);
 			p[2] = Vector.sub(p[2], out);
+			if (i + 4 >= fs) p[4] = b_;
 
 			const q = p.map(p => Vector.add(p, Vector.scale(h_, y)));
 

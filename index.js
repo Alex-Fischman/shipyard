@@ -24,11 +24,8 @@ const blocker = document.getElementById("blocker");
 blocker.addEventListener("click", blocker.requestPointerLock);
 document.addEventListener("pointerlockchange", () => {
 	if (document.pointerLockElement) {
-		blocker.style.visibility = "hidden";
 		time = undefined;
-		requestAnimationFrame(frame);
-	} else {
-		blocker.style.visibility = "visible";
+		window.requestAnimationFrame(frame);
 	}
 });
 
