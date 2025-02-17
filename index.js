@@ -3,7 +3,7 @@ const NEAR = 0.001;
 const FAR = 1000;
 
 const TICK_TIME = 1/120;
-const MOVE_SPEED = 1;
+const MOVE_SPEED = 5;
 
 let time;
 const frame = now => {
@@ -57,21 +57,22 @@ const boxes = [
 const update = dt => {
 	Input.update();
 
-	const vm = camera.view();
-	const vx = [vm[0], vm[4], vm[8]], vz = [vm[2], vm[6], vm[10]];
-
 	let move = [0, 0, 0];
 	if (Input.held["KeyW"]) move[2] -= 1;
 	if (Input.held["KeyA"]) move[0] -= 1;
 	if (Input.held["KeyS"]) move[2] += 1;
 	if (Input.held["KeyD"]) move[0] += 1;
-	if (move[0] && move[2]) move = Vector.normalize(move);
-	move = Vector.add(
-		Vector.scale(MOVE_SPEED * move[0] * dt, vx),
-		Vector.scale(MOVE_SPEED * move[2] * dt, vz),
-	);
+	if (Input.held["Space"]) move[1] += 1;
+	if (Input.held["ShiftLeft"]) move[1] -= 1;
+	if (move[0] || move[1] || move[2]) move = Vector.normalize(move);
 
-	camera.pos = Vector.add(camera.pos, move);
+	const vm = camera.view();
+	camera.pos = [
+		camera.pos,
+		Vector.scale(MOVE_SPEED * move[0] * dt, [vm[0], vm[4], vm[8]]),
+		Vector.scale(MOVE_SPEED * move[1] * dt, [vm[1], vm[5], vm[9]]),
+		Vector.scale(MOVE_SPEED * move[2] * dt, [vm[2], vm[6], vm[10]]),
+	].reduce(Vector.add);
 };
 
 document.addEventListener("mousemove", event => {
@@ -119,3 +120,4 @@ const render = () => {
 		indices,
 	});
 };
+window.addEventListener("resize", render);
