@@ -23,7 +23,6 @@ const Matrix = {
 		return out;
 	},
 
-	compose: xs => xs.reduceRight(Matrix.mul),
 	identity: () => [
 		1, 0, 0, 0,
 		0, 1, 0, 0,

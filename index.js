@@ -38,11 +38,11 @@ const camera = {
 	yaw: 0,
 
 	view: function () {
-		return Matrix.compose([
-			Matrix.translation(Vector.scale(-1, this.pos)),
-			Matrix.rotation_y(-this.yaw),
+		return [
 			Matrix.rotation_x(-this.pitch),
-		]);
+			Matrix.rotation_y(-this.yaw),
+			Matrix.translation(Vector.scale(-1, this.pos)),
+		].reduce(Matrix.mul);
 	},
 };
 
