@@ -3,7 +3,7 @@ const Input = {
 	pressed: {},
 	released: {},
 
-	update: function() {
+	update: function () {
 		this.pressed = {};
 		this.released = {};
 	},
@@ -17,11 +17,11 @@ document.addEventListener("keyup", event => {
 	Input.held[event.code] = false;
 	Input.released[event.code] = true;
 });
-document.addEventListener("mousedown", () => {
+document.addEventListener("mousedown", event => {
 	Input.held["Mouse" + event.button] = true;
 	Input.pressed["Mouse" + event.button] = true;
 });
-document.addEventListener("mouseup", () => {
+document.addEventListener("mouseup", event => {
 	Input.held["Mouse" + event.button] = false;
 	Input.released["Mouse" + event.button] = true;
 });
