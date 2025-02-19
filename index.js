@@ -1,9 +1,17 @@
 const FOV = Math.PI / 2;
 const NEAR = 0.001;
 const FAR = 1000;
+const AMBIENT = 0.5;
 
 const TICK_TIME = 1/120;
 const MOVE_SPEED = 5;
+
+const PALETTE = [
+	[1, 0, 0], [0, 1, 0], [0, 0, 1],
+	[1, 1, 0], [0, 1, 1],
+	[0.4, 0, 0], [0, 0, 0.4],
+	[0.5, 0.5, 0.5], [0.95, 0.95, 0.95],
+];
 
 let time;
 const frame = now => {
@@ -30,9 +38,9 @@ document.addEventListener("pointerlockchange", () => {
 });
 
 const camera = {
-	pos: [0, 1.5, 10],
-	pitch: -0.1,
-	yaw: 0,
+	pos: [0, 2, 0],
+	pitch: 0,
+	yaw: 3,
 
 	view: function () {
 		return [
@@ -50,13 +58,21 @@ document.addEventListener("mousemove", event => {
 	camera.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.pitch));
 });
 
-const boxes = [
-	Matrix.translation([ 0,  0, 0]),
-	Matrix.translation([ 2,  0, 0]),
-	Matrix.translation([-2,  0, 0]),
-	Matrix.translation([ 0,  2, 0]),
-	Matrix.translation([ 0, -2, 0]),
-];
+const boxes = [];
+for (let z = -60; z <= 60; z += 6) {
+	for (let x = -60; x <= 60; x += 2) {
+		boxes.push(Matrix.translation([x, 0, z]));
+	}
+}
+
+const vertexColors = boxes.flatMap((_, i) => {
+	let hash = 2166136261;
+	for (let byte = 0xFF; byte != 0; byte <<= 8) {
+		hash = hash * 16777619;
+		hash = hash ^ (i & byte);
+	}
+	return PALETTE[Math.abs(hash) % PALETTE.length];
+});
 
 const update = dt => {
 	Input.update();
@@ -84,7 +100,6 @@ const render = () => {
 	const projection = Matrix.perspective(width / height);
 
 	const { vertices, normals, indices } = Mesh.box;
-	const vertexColors = [1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1];
 	const lightDirection = Vector.normalize([0.25, 0.5, 1]);
 
 	WebGL.draw({
@@ -95,7 +110,7 @@ const render = () => {
 		`,
 		fragment: `
 			float light = dot(normalize(fragmentNormal), lightDirection);
-			gl_FragColor.rgb = fragmentColor * light;
+			gl_FragColor.rgb = fragmentColor * mix(light, 1., ambient);
 			gl_FragColor.a = 1.0;
 		`,
 		attributes: {
@@ -108,6 +123,7 @@ const render = () => {
 			view:           { type: "mat4", data: camera.view() },
 			projection:     { type: "mat4", data: projection },
 			lightDirection: { type: "vec3", data: lightDirection },
+			ambient:        { type: "float", data: AMBIENT },
 		},
 		varyings: {
 			fragmentColor:  { type: "vec3" },

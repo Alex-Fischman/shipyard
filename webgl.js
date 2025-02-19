@@ -101,6 +101,8 @@ ${source}
 				gl.uniform3fv(location, data);
 			} else if (type == "mat4") {
 				gl.uniformMatrix4fv(location, false, data);
+			} else if (type == "float") {
+				gl.uniform1f(location, data);
 			} else {
 				throw `Unknown uniform type ${type} for ${name}`;
 			}
