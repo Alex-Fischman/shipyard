@@ -133,22 +133,35 @@ const render = () => {
 
 	const texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, texture);
-	gl.copyTexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 0, 0, canvas.width, canvas.height, 0);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.copyTexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 0, 0, canvas.width, canvas.width, 0);
 
 	WebGL.draw({
 		vertex: `
 			gl_Position = vec4(vertex, 0, 1);
-			fragmentUV = vertexUV;
+			fragmentUV = vertexUV + (pixel / 2.);
 		`,
 		fragment: `
-			gl_FragColor = vec4(fragmentUV, 0, 1);
-			// gl_FragColor = texture2D(sampler, fragmentUV);
+			vec2 o = vec2(0);
+			vec2 x = vec2(pixel.x, 0.);
+			vec2 y = vec2(0., pixel.y);
+			vec4 s0 = texture2D(sampler, fragmentUV + o + o);
+			vec4 s1 = texture2D(sampler, fragmentUV + o + y);
+			vec4 s2 = texture2D(sampler, fragmentUV + o - y);
+			vec4 s3 = texture2D(sampler, fragmentUV + x + o);
+			vec4 s4 = texture2D(sampler, fragmentUV + x + y);
+			vec4 s5 = texture2D(sampler, fragmentUV + x - y);
+			vec4 s6 = texture2D(sampler, fragmentUV - x + o);
+			vec4 s7 = texture2D(sampler, fragmentUV - x + y);
+			vec4 s8 = texture2D(sampler, fragmentUV - x - y);
+			gl_FragColor = (s0 + s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8) / 9.;
 		`,
 		attributes: {
 			vertex:   { type: "vec2", data: [1, 1, -1, 1, -1, -1, 1, -1] },
 			vertexUV: { type: "vec2", data: [1, 1,  0, 1,  0,  0, 1,  0] },
 		},
 		uniforms: {
+			pixel: { type: "vec2", data: [1 / canvas.width, 1 / canvas.height] },
 			sampler: { type: "sampler2D", data: texture },
 		},
 		varyings: {

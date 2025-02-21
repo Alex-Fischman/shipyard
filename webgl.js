@@ -35,7 +35,7 @@ void main() {
 }
 		`;
 		const fragmentSource = `
-precision mediump float;
+precision highp float;
 
 ${Object.entries(uniforms).map(
 	([name, {type}]) => `uniform ${type} ${name};`
@@ -100,6 +100,8 @@ ${source}
 			const location = gl.getUniformLocation(program, name);
 			if (type == "vec3") {
 				gl.uniform3fv(location, data);
+			} else if (type == "vec2") {
+				gl.uniform2fv(location, data);
 			} else if (type == "mat4") {
 				gl.uniformMatrix4fv(location, false, data);
 			} else if (type == "float") {
