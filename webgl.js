@@ -80,7 +80,7 @@ ${source}
 			const bindAttribute = (location, size, stride, offset) => {
 				gl.vertexAttribPointer(location, size, gl.FLOAT, false, stride, offset);
 				gl.enableVertexAttribArray(location);
-				if (divisor) gl.vertexAttribDivisor(location, divisor);
+				gl.vertexAttribDivisor(location, divisor || 0);
 			};
 
 			const location = gl.getAttribLocation(program, name);

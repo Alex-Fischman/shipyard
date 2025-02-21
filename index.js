@@ -145,7 +145,7 @@ const render = () => {
 			// gl_FragColor = texture2D(sampler, fragmentUV);
 		`,
 		attributes: {
-			vertex:   { type: "vec2", data: [1, 1,  0, 1,  0,  0, 1,  0] },
+			vertex:   { type: "vec2", data: [1, 1, -1, 1, -1, -1, 1, -1] },
 			vertexUV: { type: "vec2", data: [1, 1,  0, 1,  0,  0, 1,  0] },
 		},
 		uniforms: {
@@ -155,7 +155,7 @@ const render = () => {
 			fragmentUV: { type: "vec2" },
 		},
 		instances: 1,
-		indices: [0, 1, 2, /*0, 2, 3*/],
+		indices: [0, 1, 2, 0, 2, 3],
 	});
 };
 
