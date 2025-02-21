@@ -9,13 +9,11 @@ gl.enable(gl.DEPTH_TEST);
 gl.enable(gl.CULL_FACE);
 
 const WebGL = {
-	clear: () => {
+	resize: () => {
 		const { width, height } = canvas.getBoundingClientRect();
 		canvas.width = width;
 		canvas.height = height;
-		gl.viewport(0, 0, width, height);
-		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-		return { width, height };
+		gl.viewport(0, 0, canvas.width, canvas.height);
 	},
 
 	draw: ({ vertex, fragment, attributes, uniforms, varyings, instances, indices }) => {
@@ -37,7 +35,7 @@ void main() {
 }
 		`;
 		const fragmentSource = `
-precision lowp float;
+precision mediump float;
 
 ${Object.entries(uniforms).map(
 	([name, {type}]) => `uniform ${type} ${name};`
@@ -88,6 +86,8 @@ ${source}
 			const location = gl.getAttribLocation(program, name);
 			if (type == "vec3") {
 				bindAttribute(location, 3, 0, 0);
+			} else if (type == "vec2") {
+				bindAttribute(location, 2, 0, 0);
 			} else if (type == "mat4") {
 				for (let i = 0; i < 4; i++) bindAttribute(location + i, 4, 64, 16 * i);
 			} else {
@@ -95,6 +95,7 @@ ${source}
 			}
 		}
 
+		let textureIndex = 0;
 		for (const [name, {type, data}] of Object.entries(uniforms)) {
 			const location = gl.getUniformLocation(program, name);
 			if (type == "vec3") {
@@ -103,6 +104,11 @@ ${source}
 				gl.uniformMatrix4fv(location, false, data);
 			} else if (type == "float") {
 				gl.uniform1f(location, data);
+			} else if (type == "sampler2D") {
+				gl.activeTexture(gl.TEXTURE0 + textureIndex);
+				gl.bindTexture(gl.TEXTURE_2D, data);
+				gl.uniform1i(location, textureIndex);
+				textureIndex++;
 			} else {
 				throw `Unknown uniform type ${type} for ${name}`;
 			}
@@ -110,6 +116,8 @@ ${source}
 
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
 		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		gl.drawElementsInstanced(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0, instances);
 	},
 };

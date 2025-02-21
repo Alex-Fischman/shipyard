@@ -1,6 +1,6 @@
 const FOV = Math.PI / 2;
-const NEAR = 0.001;
-const FAR = 1000;
+const NEAR = 0.1;
+const FAR = 100;
 const AMBIENT = 0.5;
 
 const TICK_TIME = 1/120;
@@ -26,7 +26,6 @@ const frame = now => {
 
 	if (document.pointerLockElement) window.requestAnimationFrame(frame);
 };
-window.requestAnimationFrame(frame);
 
 const blocker = document.getElementById("blocker");
 blocker.addEventListener("click", blocker.requestPointerLock);
@@ -96,8 +95,7 @@ const update = dt => {
 };
 
 const render = () => {
-	const { width, height } = WebGL.clear();
-	const projection = Matrix.perspective(width / height);
+	const projection = Matrix.perspective(canvas.width / canvas.height);
 
 	const { vertices, normals, indices } = Mesh.box;
 	const lightDirection = Vector.normalize([0.25, 0.5, 1]);
@@ -109,7 +107,7 @@ const render = () => {
 			fragmentNormal = mat3(model) * vertexNormal;
 		`,
 		fragment: `
-			float light = dot(normalize(fragmentNormal), lightDirection);
+			float light = max(0., dot(lightDirection, normalize(fragmentNormal)));
 			gl_FragColor.rgb = fragmentColor * mix(light, 1., ambient);
 			gl_FragColor.a = 1.0;
 		`,
@@ -132,5 +130,37 @@ const render = () => {
 		instances: boxes.length,
 		indices,
 	});
+
+	const texture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.copyTexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 0, 0, canvas.width, canvas.height, 0);
+
+	WebGL.draw({
+		vertex: `
+			gl_Position = vec4(vertex, 0, 1);
+			fragmentUV = vertexUV;
+		`,
+		fragment: `
+			gl_FragColor = vec4(fragmentUV, 0, 1);
+			// gl_FragColor = texture2D(sampler, fragmentUV);
+		`,
+		attributes: {
+			vertex:   { type: "vec2", data: [1, 1,  0, 1,  0,  0, 1,  0] },
+			vertexUV: { type: "vec2", data: [1, 1,  0, 1,  0,  0, 1,  0] },
+		},
+		uniforms: {
+			sampler: { type: "sampler2D", data: texture },
+		},
+		varyings: {
+			fragmentUV: { type: "vec2" },
+		},
+		instances: 1,
+		indices: [0, 1, 2, /*0, 2, 3*/],
+	});
 };
-window.addEventListener("resize", render);
+
+window.addEventListener("resize", () => {
+	WebGL.resize();
+	render();
+});
+window.dispatchEvent(new Event("resize"));
