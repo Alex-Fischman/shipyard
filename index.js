@@ -3,8 +3,28 @@ const NEAR = 0.1;
 const FAR = 100;
 const AMBIENT = 0.5;
 
-const TICK_TIME = 1/120;
-const MOVE_SPEED = 5;
+const PLAYER_RADIUS = 0.5;
+const JUMP_HEIGHT = 2;
+const JUMP_TIME = 1;
+const JUMP_DIST = 5;
+const SPEED = JUMP_DIST / JUMP_TIME;
+const GRAVITY = 8 * JUMP_HEIGHT / JUMP_TIME / JUMP_TIME;
+const JUMP_IMPULSE = 4 * JUMP_HEIGHT / JUMP_TIME;
+
+const JUMP_PORTION_VERTICAL = 0.5; // for wall jumps
+const JUMP_AMOUNT_VERTICAL = JUMP_IMPULSE * JUMP_PORTION_VERTICAL;
+const JUMP_AMOUNT_NON_VERTICAL = JUMP_IMPULSE * (1 - JUMP_PORTION_VERTICAL);
+
+const WALK_ACCEL_TIME = 0.05;
+const WALK_ACCEL = SPEED / WALK_ACCEL_TIME;
+const WALK_DRAG = 1 / WALK_ACCEL_TIME;
+
+const FLY_ACCEL_TIME = 1;
+const FLY_ACCEL = SPEED / FLY_ACCEL_TIME;
+const FLY_DRAG = 1 / FLY_ACCEL_TIME;
+
+const TICK_TIME = 1 / 200;
+const EPSILON = 0.001;
 
 const PALETTE = [
 	[1, 0, 0], [0, 1, 0], [0, 0, 1],
@@ -36,6 +56,12 @@ document.addEventListener("pointerlockchange", () => {
 	}
 });
 
+const player = {
+	pos: [0, 2, 0],
+	vel: [0, 0, 0],
+	jumped: true,
+};
+
 const camera = {
 	pos: [0, 2, 0],
 	pitch: 0,
@@ -58,11 +84,12 @@ document.addEventListener("mousemove", event => {
 });
 
 const boxes = [];
-for (let z = -60; z <= 60; z += 6) {
-	for (let x = -60; x <= 60; x += 2) {
+for (let z = -30; z <= 30; z += 6) {
+	for (let x = -30; x <= 30; x += 2) {
 		boxes.push(Matrix.translation([x, 0, z]));
 	}
 }
+boxes.push(Matrix.translation([3, 2, 3]));
 
 const vertexColors = boxes.flatMap((_, i) => {
 	let hash = 2166136261;
@@ -73,25 +100,77 @@ const vertexColors = boxes.flatMap((_, i) => {
 	return PALETTE[Math.abs(hash) % PALETTE.length];
 });
 
+const distanceToWorld = point => Math.min(...boxes.map(box => {
+	const vector = Vector.sub(
+		Matrix.apply(Matrix.invert(box), point).map(Math.abs),
+		[1, 1, 2.5],
+	);
+	const a = Math.min(0, Math.max(vector[0], vector[1], vector[2]));
+	const b = Vector.magnitude(Vector.max(vector, [0, 0, 0]));
+	return a + b;
+}));
+
+const normalToWorld = point => Vector.normalize([
+	distanceToWorld(Vector.add([ EPSILON, 0, 0], point)) -
+	distanceToWorld(Vector.add([-EPSILON, 0, 0], point)),
+	distanceToWorld(Vector.add([0,  EPSILON, 0], point)) -
+	distanceToWorld(Vector.add([0, -EPSILON, 0], point)),
+	distanceToWorld(Vector.add([0, 0,  EPSILON], point)) -
+	distanceToWorld(Vector.add([0, 0, -EPSILON], point)),
+]);
+
 const update = dt => {
 	Input.update();
 
-	let move = [0, 0, 0];
-	if (Input.held["KeyW"]) move[2] -= 1;
-	if (Input.held["KeyA"]) move[0] -= 1;
-	if (Input.held["KeyS"]) move[2] += 1;
-	if (Input.held["KeyD"]) move[0] += 1;
-	if (Input.held["Space"]) move[1] += 1;
-	if (Input.held["ShiftLeft"]) move[1] -= 1;
-	if (move[0] || move[1] || move[2]) move = Vector.normalize(move);
+	const distance = distanceToWorld(player.pos) - PLAYER_RADIUS;
+	const normal = normalToWorld(player.pos);
+	const movement = Vector.magnitude(player.vel) * dt;
+	const unobstructed = Math.min(movement, distance);
+	const   obstructed = Math.max(movement - distance, 0);
 
-	const vm = camera.view();
-	camera.pos = [
-		camera.pos,
-		Vector.scale(MOVE_SPEED * move[0] * dt, [vm[0], vm[4], vm[8]]),
-		Vector.scale(MOVE_SPEED * move[1] * dt, [vm[1], vm[5], vm[9]]),
-		Vector.scale(MOVE_SPEED * move[2] * dt, [vm[2], vm[6], vm[10]]),
+	let dir = Vector.setLength(player.vel, obstructed);
+	const grounded = Vector.dot(dir, normal) <= 0 && Vector.magnitude(dir) > 0;
+	if (grounded) {
+		dir = Vector.projectOntoPlane(dir, normal);
+		player.vel = Vector.projectOntoPlane(player.vel, normal);
+	}
+
+	player.pos = [
+		player.pos,
+		Vector.setLength(player.vel, unobstructed),
+		dir
 	].reduce(Vector.add);
+
+	const vy = player.vel[1];
+	const accel = grounded? WALK_ACCEL: FLY_ACCEL;
+	const drag = grounded? WALK_DRAG: FLY_DRAG;
+	const keys = [
+		(Input.held["KeyD"] || 0) - (Input.held["KeyA"] || 0),
+		0,
+		(Input.held["KeyS"] || 0) - (Input.held["KeyW"] || 0),
+	];
+	player.vel = [
+		player.vel,
+		Vector.setLength(
+			Matrix.apply(Matrix.rotation_y(camera.yaw), keys),
+			accel * dt,
+		),
+		Vector.scale(-drag * dt, player.vel),
+	].reduce(Vector.add);
+	player.vel[1] = vy;
+
+	player.vel[1] -= GRAVITY * dt;
+	if (!player.jumped && Input.held["Space"] && grounded) {
+		player.vel = [
+			player.vel,
+			[0, JUMP_AMOUNT_VERTICAL, 0],
+			Vector.scale(JUMP_AMOUNT_NON_VERTICAL, normal),
+		].reduce(Vector.add);
+		player.jumped = true;
+	}
+	if (player.jumped && !Input.held["Space"]) player.jumped = false;
+
+	camera.pos = Vector.add(player.pos, [0, PLAYER_RADIUS, 0]);
 };
 
 const render = () => {
