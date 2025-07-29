@@ -103,7 +103,7 @@ const vertexColors = boxes.flatMap((_, i) => {
 const distanceToWorld = point => Math.min(...boxes.map(box => {
 	const vector = Vector.sub(
 		Matrix.apply(Matrix.invert(box), point).map(Math.abs),
-		[1, 1, 2.5],
+		[1, 1, 3],
 	);
 	const a = Math.min(0, Math.max(vector[0], vector[1], vector[2]));
 	const b = Vector.magnitude(Vector.max(vector, [0, 0, 0]));

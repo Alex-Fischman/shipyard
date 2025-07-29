@@ -92,7 +92,7 @@ const Matrix = {
 		const b10 = a21 * a33 - a23 * a31;
 		const b11 = a22 * a33 - a23 * a32;
 
-		const det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+		let det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
 		if (det === 0) return null;
 
 		det = 1 / det;
