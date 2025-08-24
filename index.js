@@ -15,13 +15,13 @@ const JUMP_PORTION_VERTICAL = 0.5; // for wall jumps
 const JUMP_AMOUNT_VERTICAL = JUMP_IMPULSE * JUMP_PORTION_VERTICAL;
 const JUMP_AMOUNT_NON_VERTICAL = JUMP_IMPULSE * (1 - JUMP_PORTION_VERTICAL);
 
-const WALK_ACCEL_TIME = 0.05;
-const WALK_ACCEL = SPEED / WALK_ACCEL_TIME;
-const WALK_DRAG = 1 / WALK_ACCEL_TIME;
+const GROUND_ACCEL_TIME = 0.05;
+const GROUND_ACCEL = SPEED / GROUND_ACCEL_TIME;
+const GROUND_DRAG = 1 / GROUND_ACCEL_TIME;
 
-const FLY_ACCEL_TIME = 1;
-const FLY_ACCEL = SPEED / FLY_ACCEL_TIME;
-const FLY_DRAG = 1 / FLY_ACCEL_TIME;
+const AIR_ACCEL_TIME = 1;
+const AIR_ACCEL = SPEED / AIR_ACCEL_TIME;
+const AIR_DRAG = 1 / AIR_ACCEL_TIME;
 
 const TICK_TIME = 1 / 200;
 const EPSILON = 0.001;
@@ -139,30 +139,24 @@ const update = dt => {
 	player.pos = Vector.add(player.pos, dir);
 
 	const vy = player.vel[1];
-	const accel = grounded? WALK_ACCEL: FLY_ACCEL;
-	const drag = grounded? WALK_DRAG: FLY_DRAG;
+	const accel = grounded? GROUND_ACCEL: AIR_ACCEL;
+	const drag = grounded? GROUND_DRAG: AIR_DRAG;
 	const keys = [
 		(Input.held["KeyD"] || 0) - (Input.held["KeyA"] || 0),
 		0,
 		(Input.held["KeyS"] || 0) - (Input.held["KeyW"] || 0),
 	];
-	player.vel = [
-		player.vel,
-		Vector.withLength(
-			Matrix.apply(Matrix.rotation_y(camera.yaw), keys),
-			accel * dt,
-		),
-		Vector.scale(-drag * dt, player.vel),
-	].reduce(Vector.add);
+	player.vel = Vector.add(player.vel, Vector.withLength(
+		Matrix.apply(Matrix.rotation_y(camera.yaw), keys),
+		accel * dt,
+	));
+	player.vel = Vector.add(player.vel, Vector.scale(-drag * dt, player.vel));
 	player.vel[1] = vy;
 
 	player.vel[1] -= GRAVITY * dt;
 	if (!player.jumped && Input.held["Space"] && grounded) {
-		player.vel = [
-			player.vel,
-			[0, JUMP_AMOUNT_VERTICAL, 0],
-			Vector.scale(JUMP_AMOUNT_NON_VERTICAL, normal),
-		].reduce(Vector.add);
+		player.vel = Vector.add(player.vel, [0, JUMP_AMOUNT_VERTICAL, 0]);
+		player.vel = Vector.add(player.vel, Vector.scale(JUMP_AMOUNT_NON_VERTICAL, normal));
 		player.jumped = true;
 	}
 	if (player.jumped && !Input.held["Space"]) player.jumped = false;
