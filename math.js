@@ -6,10 +6,10 @@ const Vector = {
 	dot: (x, y) => Vector.mul(x, y).reduce((a, b) => a + b),
 	scale: (s, x) => x.map(x => x * s),
 	magnitude: x => Math.sqrt(Vector.dot(x, x)),
-	normalize: x => Vector.setLength(x, 1),
+	normalize: x => Vector.withLength(x, 1),
 
 	projectOntoPlane: (x, n) => Vector.sub(x, Vector.scale(Vector.dot(x, n), n)),
-	setLength: (x, l) => {
+	withLength: (x, l) => {
 		const m = Vector.magnitude(x);
 		if (m === 0) return [0, 0, 0];
 		return Vector.scale(l / m, x);

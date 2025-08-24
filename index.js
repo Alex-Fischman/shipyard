@@ -128,7 +128,7 @@ const update = dt => {
 	const unobstructed = Math.min(movement, distance);
 	const   obstructed = Math.max(movement - distance, 0);
 
-	let dir = Vector.setLength(player.vel, obstructed);
+	let dir = Vector.withLength(player.vel, obstructed);
 	const grounded = Vector.dot(dir, normal) <= 0 && Vector.magnitude(dir) > 0;
 	if (grounded) {
 		dir = Vector.projectOntoPlane(dir, normal);
@@ -137,7 +137,7 @@ const update = dt => {
 
 	player.pos = [
 		player.pos,
-		Vector.setLength(player.vel, unobstructed),
+		Vector.withLength(player.vel, unobstructed),
 		dir
 	].reduce(Vector.add);
 
@@ -151,7 +151,7 @@ const update = dt => {
 	];
 	player.vel = [
 		player.vel,
-		Vector.setLength(
+		Vector.withLength(
 			Matrix.apply(Matrix.rotation_y(camera.yaw), keys),
 			accel * dt,
 		),
