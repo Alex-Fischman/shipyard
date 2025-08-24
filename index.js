@@ -52,7 +52,7 @@ const player = {
 };
 
 const camera = {
-	pos: [0, 2, 0],
+	pos: Vector.add(player.pos, [0, PLAYER_RADIUS, 0]),
 	pitch: 0,
 	yaw: 3,
 
