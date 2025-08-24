@@ -128,18 +128,15 @@ const update = dt => {
 	const unobstructed = Math.min(movement, distance);
 	const   obstructed = Math.max(movement - distance, 0);
 
+	player.pos = Vector.add(player.pos, Vector.withLength(player.vel, unobstructed));
+
 	let dir = Vector.withLength(player.vel, obstructed);
 	const grounded = Vector.dot(dir, normal) <= 0 && Vector.magnitude(dir) > 0;
 	if (grounded) {
 		dir = Vector.projectOntoPlane(dir, normal);
 		player.vel = Vector.projectOntoPlane(player.vel, normal);
 	}
-
-	player.pos = [
-		player.pos,
-		Vector.withLength(player.vel, unobstructed),
-		dir
-	].reduce(Vector.add);
+	player.pos = Vector.add(player.pos, dir);
 
 	const vy = player.vel[1];
 	const accel = grounded? WALK_ACCEL: FLY_ACCEL;
