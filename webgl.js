@@ -16,6 +16,8 @@ const WebGL = {
 		gl.viewport(0, 0, canvas.width, canvas.height);
 	},
 
+	clear: () => gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT),
+
 	draw: ({ vertex, fragment, attributes, uniforms, varyings, instances, indices }) => {
 		const vertexSource = `
 ${Object.entries(attributes).map(
@@ -118,8 +120,6 @@ ${source}
 
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
 		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-
-		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		gl.drawElementsInstanced(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0, instances);
 	},
 };

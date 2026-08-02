@@ -169,8 +169,9 @@ const update = dt => {
 const render = () => {
 	const projection = Matrix.perspective(canvas.width / canvas.height);
 
-	const { vertices, normals, indices } = Mesh.box;
 	const lightDirection = Vector.normalize([0.25, 0.5, 1]);
+
+	WebGL.clear();
 
 	WebGL.draw({
 		vertex: `
@@ -184,9 +185,9 @@ const render = () => {
 			gl_FragColor.a = 1.0;
 		`,
 		attributes: {
-			vertex:       { type: "vec3", data: vertices },
+			vertex:       { type: "vec3", data: Mesh.box.vertices },
 			vertexColor:  { type: "vec3", data: vertexColors, divisor: 1 },
-			vertexNormal: { type: "vec3", data: normals },
+			vertexNormal: { type: "vec3", data: Mesh.box.normals },
 			model:        { type: "mat4", data: boxes.flat(), divisor: 1 },
 		},
 		uniforms: {
@@ -200,7 +201,7 @@ const render = () => {
 			fragmentNormal: { type: "vec3" },
 		},
 		instances: boxes.length,
-		indices,
+		indices: Mesh.box.indices,
 	});
 };
 
