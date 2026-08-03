@@ -22,6 +22,8 @@ const PALETTE = [
 	[0.5, 0.5, 0.5], [0.95, 0.95, 0.95],
 ];
 
+const ROPE_COLOR = [0.5, 0.25, 0];
+
 let time;
 const frame = now => {
 	let extra = ((now - time) / 1000) || TICK_TIME;
@@ -80,7 +82,7 @@ for (let z = -30; z <= 30; z += 6) {
 }
 boxes.push(Matrix.translation([3, 2, 3]));
 
-const vertexColors = boxes.flatMap((_, i) => {
+const boxColors = boxes.flatMap((_, i) => {
 	let hash = 2166136261;
 	for (let byte = 0xFF; byte != 0; byte <<= 8) {
 		hash = hash * 16777619;
@@ -88,6 +90,8 @@ const vertexColors = boxes.flatMap((_, i) => {
 	}
 	return PALETTE[Math.abs(hash) % PALETTE.length];
 });
+
+const ropes = [Matrix.translation([1, 2, 1])];
 
 const distanceToWorld = point => Math.min(...boxes.map(box => {
 	const vector = Vector.sub(
@@ -186,7 +190,7 @@ const render = () => {
 		`,
 		attributes: {
 			vertex:       { type: "vec3", data: Mesh.box.vertices },
-			vertexColor:  { type: "vec3", data: vertexColors, divisor: 1 },
+			vertexColor:  { type: "vec3", data: boxColors, divisor: 1 },
 			vertexNormal: { type: "vec3", data: Mesh.box.normals },
 			model:        { type: "mat4", data: boxes.flat(), divisor: 1 },
 		},
@@ -203,6 +207,36 @@ const render = () => {
 		instances: boxes.length,
 		indices: Mesh.box.indices,
 	});
+
+	WebGL.draw({
+		vertex: `
+			gl_Position = projection * view * model * vec4(vertex, 1);
+			fragmentNormal = mat3(model) * vertexNormal;
+		`,
+		fragment: `
+			float light = max(0., dot(lightDirection, normalize(fragmentNormal)));
+			gl_FragColor.rgb = color * mix(light, 1., ambient);
+			gl_FragColor.a = 1.0;
+		`,
+		attributes: {
+			vertex:       { type: "vec3", data: Mesh.rope.vertices },
+			vertexNormal: { type: "vec3", data: Mesh.rope.normals },
+			model:        { type: "mat4", data: ropes.flat(), divisor: 1 },
+		},
+		uniforms: {
+			view:           { type: "mat4", data: camera.view() },
+			projection:     { type: "mat4", data: projection },
+			lightDirection: { type: "vec3", data: lightDirection },
+			ambient:        { type: "float", data: AMBIENT },
+			color:          { type: "vec3", data: ROPE_COLOR },
+		},
+		varyings: {
+			fragmentNormal: { type: "vec3" },
+		},
+		instances: ropes.length,
+		indices: Mesh.rope.indices,
+	});
+
 };
 
 window.addEventListener("resize", () => {

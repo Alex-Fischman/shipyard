@@ -65,3 +65,20 @@ const Mesh = {
 	corrugate([-s, -s,  l], [ 1, 0, 0], [ 0,  1, 0], [ 0,  0,  1], s * 2, s * 2);
 	corrugate([ s, -s, -l], [-1, 0, 0], [ 0,  1, 0], [ 0,  0, -1], s * 2, s * 2);
 }
+
+{
+	const width = 0.01;
+	const s = 1;
+
+	Mesh.rope = Mesh.empty();
+	let v0 = [-width, 0, -width], v1 = [-width, 0, width];
+	let v2 = [-width, s, -width], v3 = [-width, s, width];
+	let v4 = [ width, 0, -width], v5 = [ width, 0, width];
+	let v6 = [ width, s, -width], v7 = [ width, s, width];
+	Mesh.face(Mesh.rope, [v0, v1, v3, v2], [-1, 0, 0]);
+	Mesh.face(Mesh.rope, [v4, v6, v7, v5], [1, 0, 0]);
+	Mesh.face(Mesh.rope, [v0, v4, v5, v1], [0, -1, 0]);
+	Mesh.face(Mesh.rope, [v2, v3, v7, v6], [0, 1, 0]);
+	Mesh.face(Mesh.rope, [v0, v2, v6, v4], [0, 0, -1]);
+	Mesh.face(Mesh.rope, [v1, v5, v7, v3], [0, 0, 1]);
+}
